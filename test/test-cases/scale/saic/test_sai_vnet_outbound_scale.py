@@ -13,6 +13,7 @@ from saichallenger.dataplane.ptf_testutils import (send_packet,
 import dash_helper.vnet2vnet_helper as dh
 
 current_file_dir = Path(__file__).parent
+import dpugen
 
 # Constants for scale VNET outbound routing configuration
 NUMBER_OF_VIP = 1
@@ -196,19 +197,16 @@ TEST_VNET_OUTBOUND_CONFIG_SCALE = {
 
 class TestSaiVnetOutbound:
 
-    def test_create_vnet_config(self, confgen, dpu):
+    def test_create_vnet_config(self, dpu):
         """Generate and apply configuration"""
 
-        # confgen.mergeParams(TEST_VNET_OUTBOUND_CONFIG_SCALE)
-        # confgen.generate()
-        # results = []
-        # for item in confgen.items():
-        #     pprint(item)
-        #     results.append(dpu.command_processor.process_command(item))
+        results = []
+        conf = dpugen.sai.SaiConfig()
+        conf.mergeParams(TEST_VNET_OUTBOUND_CONFIG_SCALE)
+        conf.generate()
+        for item in conf.items():
+            results.append(dpu.command_processor.process_command(item))
 
-        with (current_file_dir / 'vnet_outbound_setup_commands_scale.json').open(mode='r') as config_file:
-            setup_commands = json.load(config_file)
-        result = [*dpu.process_commands(setup_commands)]
         # print("\n======= SAI commands RETURN values =======")
         # for cmd, res in zip(setup_commands, result):
         #     print(cmd['name'], cmd['type'], res)
@@ -255,21 +253,16 @@ class TestSaiVnetOutbound:
         We generate configuration on remove stage as well to avoid storing giant objects in memory.
         """
 
-        # confgen.mergeParams(TEST_VNET_OUTBOUND_CONFIG_SCALE)
-        # confgen.generate()
-        # results = []
-        # for item in confgen.items():
-        #     item['op'] = 'remove'
-        #     pprint(item)
-        #     results.append(dpu.command_processor.process_command(item))
-
-        with (current_file_dir / 'vnet_outbound_setup_commands_scale.json').open(mode='r') as config_file:
-            setup_commands = json.load(config_file)
         cleanup_commands = []
-        for cmd in reversed(setup_commands):
-            cleanup_commands.append({'name': cmd['name'], 'op': 'remove'})
+        conf = dpugen.sai.SaiConfig()
+        conf.mergeParams(TEST_VNET_OUTBOUND_CONFIG_SCALE)
+        conf.generate()
+		# TODO: Items must be genrated in reverse order for removal.
+        for item in conf.items():
+            item['op'] = 'remove'
+            cleanup_commands.append(dpu.command_processor.process_command(item))
 
-        result = [*dpu.process_commands(cleanup_commands)]
+
         # print("\n======= SAI commands RETURN values =======")
         # for cmd, res in zip(cleanup_commands, result):
         #     print(cmd['name'], res)
