@@ -20,6 +20,7 @@ ADD SAI/rpc/saithrift-0.9.tar.gz /
 # Install the python libraries
 RUN python3 -m pip install -r /tests/requirements.txt && \
     pip3 install scapy \
+                 dpugen>=0.0.3 \
                  pysubnettree \
                  macaddress \
                  munch && \
