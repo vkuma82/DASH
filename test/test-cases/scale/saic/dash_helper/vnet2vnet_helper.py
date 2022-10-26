@@ -41,16 +41,14 @@ def configure_vnet_outbound_packet_flows(sai_dp, vip, dir_lookup, ca_smac, ca_di
                                             vip_number, dir_lookup_number, ca_smac_number, ca_dip.start),
                                        packet_count=ca_dip.count * pkt_count, pps=pps, seconds_count=duration)
 
-                sai_dp.add_ethernet_header(flow, dst_mac="00:00:02:03:04:05", src_mac="00:00:05:06:06:06")
-                sai_dp.add_ipv4_header(flow, dst_ip=vip_val, src_ip="172.16.1.1")
+                sai_dp.add_ethernet_header(flow, dst_mac="00:1B:6E:00:00:01", src_mac="00:1A:C5:00:00:01")
+                sai_dp.add_ipv4_header(flow, dst_ip=vip_val, src_ip="221.0.1.1")
                 sai_dp.add_udp_header(flow, dst_port=80, src_port=11638)
                 sai_dp.add_vxlan_header(flow, vni=dir_lookup_val)
-                sai_dp.add_ethernet_header(flow, dst_mac="02:02:02:02:02:02",
+                sai_dp.add_ethernet_header(flow, dst_mac="80:09:02:02:00:01",
                                            src_mac=tu.get_next_mac(ca_smac_val, step=ca_smac.step, number=ca_smac_number))
 
-                sai_dp.add_ipv4_header(flow, dst_ip=ca_dip.start, src_ip="10.1.1.10",
-                                       dst_step=ca_dip.step, dst_count=ca_dip.count,
-                                    dst_choice=snappi.PatternFlowIpv4Dst.INCREMENT)
+                sai_dp.add_ipv4_header(flow, dst_ip=ca_dip.start, src_ip="1.1.0.1",dst_step=ca_dip.step, dst_count=ca_dip.count,dst_choice=snappi.PatternFlowIpv4Dst.INCREMENT)
                 sai_dp.add_udp_header(flow)
 
             dir_lookup_val += dir_lookup.step

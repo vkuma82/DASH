@@ -14,7 +14,7 @@ import dash_helper.vnet2vnet_helper as dh
 
 current_file_dir = Path(__file__).parent
 import dpugen
-
+import os
 # Constants for scale VNET outbound routing configuration
 NUMBER_OF_VIP = 1
 NUMBER_OF_DLE = 2
@@ -23,8 +23,8 @@ NUMBER_OF_EAM = NUMBER_OF_ENI
 NUMBER_OF_ORE = 2  # Per ENI
 NUMBER_OF_OCPE = 2  # Per ORE
 NUMBER_OF_VNET = NUMBER_OF_ENI + (NUMBER_OF_ORE * NUMBER_OF_ENI)  # So far per ORE, but may be different
-NUMBER_OF_IN_ACL_GROUP = 10
-NUMBER_OF_OUT_ACL_GROUP = 10
+NUMBER_OF_IN_ACL_GROUP = 0
+NUMBER_OF_OUT_ACL_GROUP = 0
 
 
 # Scaled configuration
@@ -38,7 +38,7 @@ TEST_VNET_OUTBOUND_CONFIG_SCALE = {
             'SWITCH_ID': '$SWITCH_ID',
             'IPV4': {
                 'count': NUMBER_OF_VIP,
-                'start': '172.16.1.100',
+                'start': '221.0.0.2',
                 'step': '0.1.0.0'
             }
         }
@@ -78,62 +78,72 @@ TEST_VNET_OUTBOUND_CONFIG_SCALE = {
         }
     },
 
-    'DASH_ENI': {
-        'eni': {
-            'count': NUMBER_OF_ENI,
-            'ACL_GROUP': {
-                'INBOUND': {
-                    'STAGE1': {
-                        'list': 'DASH_ACL_GROUP#in_acl_group_id#0'
-                    },
-                    'STAGE2': {
-                        'list': 'DASH_ACL_GROUP#in_acl_group_id#0'
-                    },
-                    'STAGE3': {
-                        'list': 'DASH_ACL_GROUP#in_acl_group_id#0'
-                    },
-                    'STAGE4': {
-                        'list': 'DASH_ACL_GROUP#in_acl_group_id#0'
-                    },
-                    'STAGE5': {
-                        'list': 'DASH_ACL_GROUP#in_acl_group_id#0'
-                    }
-                },
-                'OUTBOUND': {
-                    'STAGE1': 0,
-                    'STAGE2': 0,
-                    'STAGE3': 0,
-                    'STAGE4': 0,
-                    'STAGE5': 0
-                }
-            },
-            'ADMIN_STATE': True,
-            'CPS': 10000,
-            'FLOWS': 10000,
-            'PPS': 100000,
-            'VM_UNDERLAY_DIP': {
-                'count': NUMBER_OF_ENI,
-                'start': '172.16.1.1',
-                'step': '0.0.1.0'
-            },
-            'VM_VNI': {
-                'count': NUMBER_OF_ENI,
-                'start': 9
-            },
-            'VNET_ID': {
-                'count': NUMBER_OF_ENI,
-                'start': '$vnet_#{4}'
-            }
-        }
-    },
 
+    # DASH_ENI:{{eni}}
+    'DASH_ENI_SCALE': {
+        'name': {  # supports: substitution
+            'substitution': {
+                'base': 'eni#{0}',
+                'params': {
+                    0: {
+                        'start': 11,
+                        'step': 1,
+                        'count': NUMBER_OF_ENI,
+                    },
+                },
+                'count': NUMBER_OF_ENI,
+            }
+        },
+        'eni_id': {  # supports: increment
+            'increment': {
+                'start': 11,
+                'step': 1,
+                'count': NUMBER_OF_ENI  # TODO: copy count from eni count or make variables
+            }
+        },
+        'mac_address': {  # supports: increment
+            'increment': {
+                'start': '00:1A:C5:00:00:01',
+                'step': '00:00:00:18:00:00',
+                'count': NUMBER_OF_ENI  # TODO: copy count from eni count or make variables
+            }
+        },
+        'address': {  # supports: increment
+            'increment': {
+                'start': '1.1.0.1',
+                'step': '1.0.0.0',
+                'count': NUMBER_OF_ENI  # TODO: copy count from eni count or make variables
+            }
+        },
+        'underlay_ip': {  # supports: increment
+            'increment': {
+                'start': '221.0.1.1',
+                'step': '0.0.0.1',
+                'count': NUMBER_OF_ENI  # TODO: copy count from eni count or make variables
+            }
+        },
+        'vnet': {  # supports: substitution
+            'substitution': {
+                'base': 'vnet#{0}',
+                'params': {
+                    0: {
+                        'start': 1,
+                        'step': 1,
+                        'count': NUMBER_OF_ENI
+                    },
+                },
+                'count': NUMBER_OF_ENI
+            }
+        },
+    },
     'DASH_ENI_ETHER_ADDRESS_MAP': {
         'eam': {
             'count': NUMBER_OF_EAM,
             'SWITCH_ID': '$SWITCH_ID',
             'MAC': {
                 'count': NUMBER_OF_EAM,
-                'start': '00:CC:CC:CC:00:00',
+                #'start': '00:CC:CC:CC:00:00',
+                'start': '00:1A:C5:00:00:01',
                 'step': "00:00:00:00:00:01"
             },
             'ENI_ID': {
@@ -150,7 +160,8 @@ TEST_VNET_OUTBOUND_CONFIG_SCALE = {
             'ACTION': 'ROUTE_VNET',
             'DESTINATION': {
                 'count': NUMBER_OF_ORE,
-                'start': '10.1.1.0/31',
+                #'start': '10.1.1.0/31',
+                'start': "1.128.0.1/9",
                 'step': '0.0.0.2'
             },
             'ENI_ID': {
@@ -172,7 +183,7 @@ TEST_VNET_OUTBOUND_CONFIG_SCALE = {
             'SWITCH_ID': '$SWITCH_ID',
             'DIP': {
                 'count': NUMBER_OF_ORE * NUMBER_OF_OCPE,
-                'start': '10.1.1.0',
+                'start': '1.128.0.1',
                 'step': '0.0.0.1'
             },
             'DST_VNET_ID': {
@@ -182,12 +193,12 @@ TEST_VNET_OUTBOUND_CONFIG_SCALE = {
             },
             'UNDERLAY_DIP': {
                 'count': NUMBER_OF_ENI * NUMBER_OF_ORE,
-                'start': '172.16.1.20',
-                'step': '0.0.1.0'
+                'start': '221.0.1.1',
+                'step': '0.0.0.1'
             },
             'OVERLAY_DMAC': {
                 'count': NUMBER_OF_ENI * NUMBER_OF_ORE,
-                'start': '00:DD:DD:DD:00:00'
+                'start': '00:1B:6E:00:00:01'
             },
             'USE_DST_VNET_VNI': True
         }
@@ -202,9 +213,11 @@ class TestSaiVnetOutbound:
 
         results = []
         conf = dpugen.sai.SaiConfig()
-        conf.mergeParams(TEST_VNET_OUTBOUND_CONFIG_SCALE)
+        #conf.mergeParams(TEST_VNET_OUTBOUND_CONFIG_SCALE)
         conf.generate()
+        conf.write2File('json',os.path.join(current_file_dir,"abcd.json"))
         for item in conf.items():
+            print (item)
             results.append(dpu.command_processor.process_command(item))
 
         # print("\n======= SAI commands RETURN values =======")
@@ -247,7 +260,7 @@ class TestSaiVnetOutbound:
                                                                 name="Custom flow group", show=True)[0],
                     "Test", timeout_seconds=test_duration + 1)
 
-    def test_remove_vnet_config(self, confgen, dpu, dataplane):
+    def test_remove_vnet_config(self, dpu, dataplane):
         """
         Generate and remove configuration
         We generate configuration on remove stage as well to avoid storing giant objects in memory.
@@ -257,8 +270,9 @@ class TestSaiVnetOutbound:
         conf = dpugen.sai.SaiConfig()
         conf.mergeParams(TEST_VNET_OUTBOUND_CONFIG_SCALE)
         conf.generate()
-		# TODO: Items must be genrated in reverse order for removal.
-        for item in conf.items():
+        # TODO: Items must be genrated in reverse order for removal.
+        conf_items = list(conf.items())
+        for item in reversed(conf_items):
             item['op'] = 'remove'
             cleanup_commands.append(dpu.command_processor.process_command(item))
 
